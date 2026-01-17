@@ -1,0 +1,33 @@
+(custom_tls) {
+	tls /etc/caddy/certs/server-bundle.pem /etc/caddy/certs/server.key
+}
+
+:80 {
+	reverse_proxy http://copyparty:80
+}
+
+fs.home.lcl fs.home.rmt fs.home.dir {
+	import custom_tls
+	reverse_proxy http://copyparty:80
+}
+
+git.home.lcl git.home.rmt git.home.dir {
+	import custom_tls
+	reverse_proxy http://gitea:80 {
+#		client_body_buffer_size 512MB
+
+		transport http {
+			keepalive off
+		}
+	}
+}
+
+assistant.home.lcl assistant.home.rmt assistant.home.dir {
+	import custom_tls
+	reverse_proxy http://homeassistant:8123
+}
+
+pihole.home.lcl pihole.home.rmt pihole.home.dir {
+	import custom_tls
+	reverse_proxy http://pihole:80
+}

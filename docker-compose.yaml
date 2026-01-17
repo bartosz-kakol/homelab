@@ -5,18 +5,28 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "4001:80/tcp"
-      - "4002:443/tcp"
     env_file: globals.env
     environment:
       FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
       FTLCONF_dns_listeningMode: "ALL"
     volumes:
-      - "./persist/pihole/etc:/etc/pihole"
+      - ./persist/pihole/etc:/etc/pihole
     cap_add:
       - NET_ADMIN
       - SYS_TIME
       - SYS_NICE
     restart: unless-stopped
 
-
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    privileged: true
+    ports:
+      - "8123:8123"
+    env_file: globals.env
+    volumes:
+      - ./persist/homeassistant/config:/config
+      - /run/dbus:/run/dbus:ro
+      # External storage
+      - /mnt/Magazyn:/mnt/Magazyn:ro
+    restart: unless-stopped

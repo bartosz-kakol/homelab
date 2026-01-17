@@ -1,0 +1,78 @@
+#!/bin/bash
+
+set -e
+
+mkdir -p out
+
+DAYS_VALID=825
+COUNTRY="PL"
+STATE="Pomorskie"
+CITY="Gdansk"
+ORG="Home"
+ORG_UNIT="IT"
+CA_COMMON_NAME="Home CA"
+CERT_COMMON_NAME="home.lcl"
+
+echo "🔑 Generating password-protected CA private key..."
+echo "   (You'll be prompted for a password - remember it!)"
+openssl genrsa -des3 -out out/ca.key 2048
+echo ""
+
+echo "📜 Generating CA certificate..."
+echo "   (Enter the same password when prompted)"
+openssl req -x509 -new -nodes -key out/ca.key -sha256 -days 1825 -out out/ca.pem \
+-subj "/C=$COUNTRY/ST=$STATE/L=$CITY/O=$ORG/OU=$ORG_UNIT/CN=$CA_COMMON_NAME"
+echo ""
+
+echo "🔑 Generating server private key..."
+openssl genrsa -out out/server.key 2048
+echo ""
+
+echo "📝 Generating certificate signing request..."
+openssl req -new -key out/server.key -out out/cert_unsigned.csr -config csr.conf
+
+echo ""
+echo "✍️ Signing the certificate..."
+echo "   (Enter CA key password when prompted)"
+openssl x509 -req -in out/cert_unsigned.csr -CA out/ca.pem -CAkey out/ca.key -CAcreateserial \
+-out out/server.pem -days $DAYS_VALID -sha256 -extfile cert.conf -extensions v3_ext
+echo ""
+
+echo "🔗 Creating certificate + CA bundle..."
+cat out/server.pem out/ca.pem > out/server-bundle.pem
+echo ""
+
+echo "🔗 Creating key + certificate + CA bundle..."
+cat out/server.key out/server.pem out/ca.pem > out/server-key-bundle.pem
+echo ""
+
+echo "🧹 Cleaning up temporary files..."
+rm out/cert_unsigned.csr out/ca.srl
+echo ""
+
+#chmod 600 out/ca.key out/server.key
+#chmod 644 out/ca.pem out/server.pem out/server-bundle.pem
+
+#echo "📋 Copying files to nginx..."
+#sudo mkdir -p /var/www/ssl
+#sudo cp out/ca.pem /var/www/ssl
+#sudo cp out/server-bundle.pem /var/www/ssl
+#sudo cp out/server.key /var/www/ssl
+#sudo chown -R root:www-data /var/www/ssl
+#sudo chmod -R 755 /var/www/ssl
+
+echo ""
+echo "✅ SSL certificates generated successfully!"
+echo ""
+echo "📁 Generated files in 'out' directory:"
+echo "   📄 ca.pem                 - Certificate Authority certificate"
+echo "   🔑 ca.key                 - Certificate Authority private key"
+echo "   📄 server.pem             - Server certificate"
+echo "   🔑 server.key             - Server private key"
+echo "   📄 server-bundle.pem      - Server + CA bundle"
+echo "   📄 server-key-bundle.pem  - Server + private key + CA bundle"
+echo "   "
+#echo ""
+#echo "🔧 Nginx configuration:"
+#echo "   ssl_certificate     /var/www/ssl/server-bundle.pem;"
+#echo "   ssl_certificate_key /var/www/ssl/server.key;"
