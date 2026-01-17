@@ -26,7 +26,7 @@ def main():
         # Start creating from the current directory
         create_tree(".", config)
         print("\nTree creation successful!")
-        
+        os.system("tree .")
     except FileNotFoundError:
         print("Error: dirs.yaml not found.")
     except Exception as e:

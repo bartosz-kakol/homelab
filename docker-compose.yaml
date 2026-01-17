@@ -7,8 +7,8 @@ services:
       - "53:53/udp"
       - "4001:80/tcp"
       - "4002:443/tcp"
+    env_file: globals.env
     environment:
-      TZ: "Europe/Warsaw"
       FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
       FTLCONF_dns_listeningMode: "ALL"
     volumes:
