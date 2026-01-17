@@ -1,0 +1,22 @@
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "4001:80/tcp"
+      - "4002:443/tcp"
+    environment:
+      TZ: "Europe/Warsaw"
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
+      FTLCONF_dns_listeningMode: "ALL"
+    volumes:
+      - "./persist/pihole/etc:/etc/pihole"
+    cap_add:
+      - NET_ADMIN
+      - SYS_TIME
+      - SYS_NICE
+    restart: unless-stopped
+
+
