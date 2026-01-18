@@ -1,21 +1,79 @@
 services:
-  pihole:
-    container_name: pihole
-    image: pihole/pihole:latest
+#  pihole:
+#    container_name: pihole
+#    image: pihole/pihole:latest
+#    ports:
+#      - "${PIHOLE_EXTERNAL_IP}:53:53/tcp"
+#      - "${PIHOLE_EXTERNAL_IP}:53:53/udp"
+#      - "81:80"
+#    env_file: globals.env
+#    environment:
+#      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
+#      FTLCONF_dns_listeningMode: "ALL"
+#      FTLCONF_LOCAL_IPV4: ${PIHOLE_EXTERNAL_IP}
+#      DNSMASQ_LISTENING: "bind"
+#      INTERFACE: ${PIHOLE_EXTERNAL_INTERFACE}
+#    volumes:
+#      - ./persist/pihole/etc:/etc/pihole
+#    cap_add:
+#      - NET_ADMIN
+#      - SYS_TIME
+#      - SYS_NICE
+#    restart: unless-stopped
+#    networks:
+#      - main
+
+  dnsmasq:
+    container_name: dnsmasq
+    image: jpillora/dnsmasq:latest
     ports:
-      - "53:53/tcp"
-      - "53:53/udp"
+      - "${DNS_EXTERNAL_IP}:53:53/udp"
+      - "${DNS_EXTERNAL_IP}:53:53/tcp"
+      - "8080:8080"
+    volumes:
+      - ./persist/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
     env_file: globals.env
     environment:
-      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
-      FTLCONF_dns_listeningMode: "ALL"
+      HTTP_USER: bartekk
+      HTTP_PASS: ${PASSWORD}
+    restart: always
+    networks:
+      - main
+
+  caddy:
+    container_name: caddy
+    image: caddy:2.11-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: globals.env
     volumes:
-      - ./persist/pihole/etc:/etc/pihole
-    cap_add:
-      - NET_ADMIN
-      - SYS_TIME
-      - SYS_NICE
+      - ./persist/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./ssl/out:/etc/caddy/certs
+      - socket-data:/run/sockets
     restart: unless-stopped
+    networks:
+      - main
+    depends_on:
+      - dnsmasq
+      - copyparty
+      - homeassistant
+
+  copyparty:
+    container_name: copyparty
+    image: copyparty/iv:1.20.1
+    env_file: globals.env
+    environment:
+      # Up to 3x performance boost, may double RAM usage
+      LD_PRELOAD: /usr/lib/libmimalloc-secure.so.2
+    volumes:
+      - ./persist/copyparty/cfg:/cfg
+      # External storage
+      - /mnt/Magazyn:/mnt/Magazyn
+      - socket-data:/run/sockets
+    restart: unless-stopped
+    networks:
+      - main
 
   homeassistant:
     container_name: homeassistant
@@ -30,3 +88,16 @@ services:
       # External storage
       - /mnt/Magazyn:/mnt/Magazyn:ro
     restart: unless-stopped
+    networks:
+      - main
+
+volumes:
+  socket-data:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=10M,mode=1777"
+
+networks:
+  main:

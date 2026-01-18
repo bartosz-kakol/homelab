@@ -3,12 +3,17 @@
 }
 
 :80 {
-	reverse_proxy http://copyparty:80
+	reverse_proxy unix//run/sockets/copyparty.sock
+}
+
+pihole.home.lcl pihole.home.rmt pihole.home.dir {
+        import custom_tls
+        reverse_proxy http://pihole:80
 }
 
 fs.home.lcl fs.home.rmt fs.home.dir {
 	import custom_tls
-	reverse_proxy http://copyparty:80
+	reverse_proxy unix//run/sockets/copyparty.sock
 }
 
 git.home.lcl git.home.rmt git.home.dir {
@@ -25,9 +30,4 @@ git.home.lcl git.home.rmt git.home.dir {
 assistant.home.lcl assistant.home.rmt assistant.home.dir {
 	import custom_tls
 	reverse_proxy http://homeassistant:8123
-}
-
-pihole.home.lcl pihole.home.rmt pihole.home.dir {
-	import custom_tls
-	reverse_proxy http://pihole:80
 }
