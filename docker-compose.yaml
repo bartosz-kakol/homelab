@@ -48,9 +48,9 @@ services:
       - "443:443"
     env_file: globals.env
     volumes:
+      - socket-data:/run/sockets
       - ./persist/caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./ssl/out:/etc/caddy/certs
-      - socket-data:/run/sockets
     restart: unless-stopped
     networks:
       - main
@@ -67,10 +67,10 @@ services:
       # Up to 3x performance boost, may double RAM usage
       LD_PRELOAD: /usr/lib/libmimalloc-secure.so.2
     volumes:
+      - socket-data:/run/sockets
       - ./persist/copyparty/cfg:/cfg
       # External storage
       - /mnt/Magazyn:/mnt/Magazyn
-      - socket-data:/run/sockets
     restart: unless-stopped
     networks:
       - main
