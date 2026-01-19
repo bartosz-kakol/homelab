@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Disable the kernel's own terminal blanking timer
+TERM=linux /usr/bin/setterm --blank 0 --powersave off </dev/tty1 >/dev/tty1
+
+if [[ "$1" == "delay" ]]; then
+	sleep 2
+fi
+
+# Blank the signal
+TERM=linux /usr/bin/setterm --blank force </dev/tty1 >/dev/tty1
+
+# Unbind terminal
+if [ -e /sys/class/vtconsole/vtcon1/bind ]; then
+    echo 0 > /sys/class/vtconsole/vtcon1/bind
+fi

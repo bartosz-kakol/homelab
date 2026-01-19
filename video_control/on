@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Bind terminal
+echo 1 > /sys/class/vtconsole/vtcon1/bind
+
+# "Poke" terminal to wake it up
+TERM=linux /usr/bin/setterm --blank poke </dev/tty1 >/dev/tty1
