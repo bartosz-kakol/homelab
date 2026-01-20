@@ -1,28 +1,4 @@
 services:
-#  pihole:
-#    container_name: pihole
-#    image: pihole/pihole:latest
-#    ports:
-#      - "${PIHOLE_EXTERNAL_IP}:53:53/tcp"
-#      - "${PIHOLE_EXTERNAL_IP}:53:53/udp"
-#      - "81:80"
-#    env_file: globals.env
-#    environment:
-#      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
-#      FTLCONF_dns_listeningMode: "ALL"
-#      FTLCONF_LOCAL_IPV4: ${PIHOLE_EXTERNAL_IP}
-#      DNSMASQ_LISTENING: "bind"
-#      INTERFACE: ${PIHOLE_EXTERNAL_INTERFACE}
-#    volumes:
-#      - ./persist/pihole/etc:/etc/pihole
-#    cap_add:
-#      - NET_ADMIN
-#      - SYS_TIME
-#      - SYS_NICE
-#    restart: unless-stopped
-#    networks:
-#      - main
-
   dnsmasq:
     container_name: dnsmasq
     image: jpillora/dnsmasq:latest
@@ -69,6 +45,7 @@ services:
     volumes:
       - socket-data:/run/sockets
       - ./persist/copyparty/cfg:/cfg
+      - ./copyparty:/mnt/Internal
       # External storage
       - /mnt/Magazyn:/mnt/Magazyn
     restart: unless-stopped
