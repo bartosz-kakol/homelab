@@ -1,4 +1,4 @@
 *
 !.gitignore
 !main.conf
-!users.dist.conf
+!users.conf.dist
