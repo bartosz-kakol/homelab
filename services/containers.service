@@ -6,11 +6,11 @@ After=docker.service
 [Service]
 User=bartekk
 Group=docker
-Type=oneshot
+Type=simple
 RemainAfterExit=yes
 WorkingDirectory=/home/bartekk/
 
-ExecStart=/usr/bin/docker compose up -d
+ExecStart=/usr/bin/docker compose up
 ExecStop=/usr/bin/docker compose down
 
 [Install]

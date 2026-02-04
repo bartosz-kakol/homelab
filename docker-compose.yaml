@@ -68,6 +68,18 @@ services:
     networks:
       - main
 
+  djabbot:
+    container_name: djabbot
+    network_mode: host
+    image: ghcr.io/bartosz-kakol/dj_angry_birds_bot:1.0.0
+    env_file: globals.env
+    environment:
+      TOKEN: ${DJAB_TOKEN}
+      CLIENT_ID: ${DJAB_CLIENT_ID}
+    restart: always
+#    networks:
+#      - main
+
 volumes:
   socket-data:
     driver: local
