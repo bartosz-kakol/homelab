@@ -16,6 +16,12 @@ services:
     networks:
       - main
 
+  wol_sender:
+    container_name: wolsender
+    build: ./wol_sender_app
+    network_mode: host
+    restart: unless-stopped
+
   caddy:
     container_name: caddy
     image: caddy:2.11-alpine
@@ -25,6 +31,7 @@ services:
     env_file: globals.env
     volumes:
       - socket-data:/run/sockets
+      - /dev/shm:/run/host_shm:rw
       - ./persist/caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./ssl/out:/etc/caddy/certs
     restart: unless-stopped
@@ -42,12 +49,13 @@ services:
     environment:
       # Up to 3x performance boost, may double RAM usage
       LD_PRELOAD: /usr/lib/libmimalloc-secure.so.2
+    stop_grace_period: 15s
     volumes:
       - socket-data:/run/sockets
       - ./persist/copyparty/cfg:/cfg
-      - ./copyparty:/mnt/Internal
+      - ./copyparty/internal:/mnt/Internal
       # External storage
-      - /mnt/Magazyn:/mnt/Magazyn
+      - /mnt/Magazyn:/mnt/Magazyn:rw,rslave
     restart: unless-stopped
     networks:
       - main
@@ -56,6 +64,7 @@ services:
     container_name: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
     privileged: true
+#    network_mode: host
     ports:
       - "8123:8123"
     env_file: globals.env
@@ -63,8 +72,11 @@ services:
       - ./persist/homeassistant/config:/config
       - /run/dbus:/run/dbus:ro
       # External storage
-      - /mnt/Magazyn:/mnt/Magazyn:ro
+      - /mnt/Magazyn:/mnt/Magazyn:ro,rslave
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "pc.docker.internal:${PC_IP}"
     networks:
       - main
 
