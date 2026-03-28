@@ -1,20 +1,4 @@
 services:
-#  dnsmasq:
-#    container_name: dnsmasq
-#    image: jpillora/dnsmasq:latest
-#    ports:
-#      - "${DNS_EXTERNAL_IP}:53:53/udp"
-#      - "${DNS_EXTERNAL_IP}:53:53/tcp"
-#      - "8080:8080"
-#    volumes:
-#      - ./persist/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
-#    env_file: globals.env
-#    environment:
-#      HTTP_USER: bartekk
-#      HTTP_PASS: ${PASSWORD}
-#    restart: always
-#    networks:
-#      - main
   dnsmasq:
     container_name: dnsmasq
     image: dockurr/dnsmasq
@@ -24,20 +8,11 @@ services:
     volumes:
       - ./persist/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
     env_file: globals.env
-#    environment:
-#      DNS1: "8.8.8.8"
-#      DNS2: "1.1.1.1"
     cap_add:
       - NET_ADMIN
     restart: always
     networks:
       - main
-
-  wol_sender:
-    container_name: wolsender
-    build: ./wol_sender_app
-    network_mode: host
-    restart: unless-stopped
 
   caddy:
     container_name: caddy
@@ -77,25 +52,24 @@ services:
     networks:
       - main
 
-  homeassistant:
-    container_name: homeassistant
-    image: ghcr.io/home-assistant/home-assistant:stable
-    privileged: true
-#    network_mode: host
-    ports:
-      - "8123:8123"
-    env_file: globals.env
-    volumes:
-      - ./persist/homeassistant/config:/config
-      - /run/dbus:/run/dbus:ro
-      # External storage
-      - /mnt/Magazyn:/mnt/Magazyn:ro,rslave
-    restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      - "pc.docker.internal:${PC_IP}"
-    networks:
-      - main
+#  homeassistant:
+#    container_name: homeassistant
+#    image: ghcr.io/home-assistant/home-assistant:stable
+#    privileged: true
+#    ports:
+#      - "8123:8123"
+#    env_file: globals.env
+#    volumes:
+#      - ./persist/homeassistant/config:/config
+#      - /run/dbus:/run/dbus:ro
+#      # External storage
+#      - /mnt/Magazyn:/mnt/Magazyn:ro,rslave
+#    restart: unless-stopped
+#    extra_hosts:
+#      - "host.docker.internal:host-gateway"
+#      - "pc.docker.internal:${PC_IP}"
+#    networks:
+#      - main
 
   djabbot:
     container_name: djabbot
@@ -106,8 +80,6 @@ services:
       TOKEN: ${DJAB_TOKEN}
       CLIENT_ID: ${DJAB_CLIENT_ID}
     restart: always
-#    networks:
-#      - main
 
 volumes:
   socket-data:
