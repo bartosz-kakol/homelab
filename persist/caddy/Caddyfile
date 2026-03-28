@@ -6,11 +6,6 @@
 	reverse_proxy unix//run/sockets/copyparty.sock
 }
 
-pihole.home.lcl pihole.home.rmt pihole.home.dir {
-        import custom_tls
-        reverse_proxy http://pihole:80
-}
-
 fs.home.lcl fs.home.rmt fs.home.dir {
 	import custom_tls
 	reverse_proxy unix//run/sockets/copyparty.sock
