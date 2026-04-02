@@ -1,7 +1,7 @@
 [Unit]
 Description=Docker containers
-Requires=docker.service
-After=docker.service
+Requires=docker.service tailscaled.service
+After=docker.service tailscaled.service
 
 [Service]
 User=bartekk
