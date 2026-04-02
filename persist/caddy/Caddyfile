@@ -6,21 +6,21 @@
 	reverse_proxy unix//run/sockets/copyparty.sock
 }
 
-fs.home.lcl fs.home.rmt fs.home.dir {
+fs.home.rmt fs.home.dir {
 	import custom_tls
 	reverse_proxy unix//run/sockets/copyparty.sock
 }
 
-git.home.lcl git.home.rmt git.home.dir {
-	import custom_tls
-	reverse_proxy http://gitea:80 {
+#git.home.rmt git.home.dir {
+#	import custom_tls
+#	reverse_proxy http://gitea:80 {
 #		client_body_buffer_size 512MB
-
-		transport http {
-			keepalive off
-		}
-	}
-}
+#
+#		transport http {
+#			keepalive off
+#		}
+#	}
+#}
 
 assistant.home.lcl assistant.home.rmt assistant.home.dir {
 	import custom_tls

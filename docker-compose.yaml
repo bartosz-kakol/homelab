@@ -1,19 +1,4 @@
 services:
-  dnsmasq:
-    container_name: dnsmasq
-    image: dockurr/dnsmasq
-    ports:
-      - "${DNS_EXTERNAL_IP}:53:53/udp"
-      - "${DNS_EXTERNAL_IP}:53:53/tcp"
-    volumes:
-      - ./persist/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
-    env_file: globals.env
-    cap_add:
-      - NET_ADMIN
-    restart: always
-    networks:
-      - main
-
   caddy:
     container_name: caddy
     image: caddy:2.11-alpine
@@ -30,7 +15,6 @@ services:
     networks:
       - main
     depends_on:
-      - dnsmasq
       - copyparty
       - homeassistant
 
@@ -52,24 +36,24 @@ services:
     networks:
       - main
 
-#  homeassistant:
-#    container_name: homeassistant
-#    image: ghcr.io/home-assistant/home-assistant:stable
-#    privileged: true
-#    ports:
-#      - "8123:8123"
-#    env_file: globals.env
-#    volumes:
-#      - ./persist/homeassistant/config:/config
-#      - /run/dbus:/run/dbus:ro
-#      # External storage
-#      - /mnt/Magazyn:/mnt/Magazyn:ro,rslave
-#    restart: unless-stopped
-#    extra_hosts:
-#      - "host.docker.internal:host-gateway"
-#      - "pc.docker.internal:${PC_IP}"
-#    networks:
-#      - main
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    privileged: true
+    ports:
+      - "8123:8123"
+    env_file: globals.env
+    volumes:
+      - ./persist/homeassistant/config:/config
+      - /run/dbus:/run/dbus:ro
+      # External storage
+      - /mnt/Magazyn:/mnt/Magazyn:ro,rslave
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "pc.docker.internal:${PC_IP}"
+    networks:
+      - main
 
   djabbot:
     container_name: djabbot
