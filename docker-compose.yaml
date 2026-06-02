@@ -1,10 +1,13 @@
 services:
   caddy:
     container_name: caddy
-    image: caddy:2.11-alpine
-    ports:
-      - "80:80"
-      - "443:443"
+#    image: caddy:2.11-alpine
+    build:
+      context: caddy
+      dockerfile: Dockerfile
+#    ports:
+#      - "80:80"
+#      - "443:443"
     env_file: globals.env
     volumes:
       - socket-data:/run/sockets
@@ -12,57 +15,62 @@ services:
       - ./persist/caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./ssl/out:/etc/caddy/certs
     restart: unless-stopped
-    networks:
-      - main
-    depends_on:
-      - copyparty
-      - homeassistant
-
-  copyparty:
-    container_name: copyparty
-    image: copyparty/iv:1.20.1
-    env_file: globals.env
-    environment:
-      # Up to 3x performance boost, may double RAM usage
-      LD_PRELOAD: /usr/lib/libmimalloc-secure.so.2
-    stop_grace_period: 15s
-    volumes:
-      - socket-data:/run/sockets
-      - ./persist/copyparty/cfg:/cfg
-      - ./copyparty/internal:/mnt/Internal
-      # External storage
-      - /mnt/Magazyn:/mnt/Magazyn:rw,rslave
-    restart: unless-stopped
-    networks:
-      - main
+#    networks:
+#      - main
+    network_mode: host
 
   homeassistant:
     container_name: homeassistant
-    image: ghcr.io/home-assistant/home-assistant:stable
+    image: ghcr.io/home-assistant/home-assistant:2026.5
     privileged: true
-    ports:
-      - "8123:8123"
+#    ports:
+#      - "8123:8123"
     env_file: globals.env
     volumes:
       - ./persist/homeassistant/config:/config
       - /run/dbus:/run/dbus:ro
-      # External storage
-      - /mnt/Magazyn:/mnt/Magazyn:ro,rslave
+#    devices:
+#      - /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyUSB0
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - main
-
-  djabbot:
-    container_name: djabbot
     network_mode: host
-    image: ghcr.io/bartosz-kakol/dj_angry_birds_bot:1.0.0
+#    networks:
+#      - main
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./persist/mosquitto/config:/mosquitto/config
+      - ./persist/mosquitto/data:/mosquitto/data
+      - ./persist/mosquitto/log:/mosquitto/log
+    ports:
+      - "1883:1883"
+
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt:latest
     env_file: globals.env
-    environment:
-      TOKEN: ${DJAB_TOKEN}
-      CLIENT_ID: ${DJAB_CLIENT_ID}
-    restart: always
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./persist/zigbee2mqtt/data:/app/data
+      - /run/udev:/run/udev:ro
+    devices:
+      - /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyUSB0
+    ports:
+      - "8080:8080"
+
+#  djabbot:
+#    container_name: djabbot
+#    network_mode: host
+#    image: ghcr.io/bartosz-kakol/dj_angry_birds_bot:1.0.0
+#    env_file: globals.env
+#    environment:
+#      TOKEN: ${DJAB_TOKEN}
+#      CLIENT_ID: ${DJAB_CLIENT_ID}
+#    restart: always
 
 volumes:
   socket-data:
@@ -72,5 +80,5 @@ volumes:
       device: tmpfs
       o: "size=10M,mode=1777"
 
-networks:
-  main:
+#networks:
+#  main:

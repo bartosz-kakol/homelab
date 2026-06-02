@@ -1,14 +1,24 @@
+{
+	order wake_on_lan before respond
+}
+
 (custom_tls) {
 	tls /etc/caddy/certs/server-bundle.pem /etc/caddy/certs/server.key
 }
 
 :80 {
-	reverse_proxy unix//run/sockets/copyparty.sock
+	reverse_proxy http://123.123.1.2:3923
 }
 
 fs.home.rmt fs.home.dir {
 	import custom_tls
-	reverse_proxy unix//run/sockets/copyparty.sock
+	wake_on_lan 10:ff:e0:cf:e6:0e 123.123.1.255
+	reverse_proxy http://123.123.1.2:3923 {
+		transport http {
+			dial_timeout 10s
+			read_timeout 10s
+		}
+	}
 }
 
 #git.home.rmt git.home.dir {
@@ -24,5 +34,10 @@ fs.home.rmt fs.home.dir {
 
 assistant.home.lcl assistant.home.rmt assistant.home.dir {
 	import custom_tls
-	reverse_proxy http://homeassistant:8123
+	reverse_proxy http://127.0.0.1:8123
+}
+
+zigbee2mqtt.home.lcl zigbee2mqtt.home.rmt zigbee2mqtt.home.dir {
+	import custom_tls
+	reverse_proxy http://127.0.0.1:8080
 }
