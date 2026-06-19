@@ -1,13 +1,9 @@
 services:
   caddy:
     container_name: caddy
-#    image: caddy:2.11-alpine
     build:
       context: caddy
       dockerfile: Dockerfile
-#    ports:
-#      - "80:80"
-#      - "443:443"
     env_file: globals.env
     volumes:
       - socket-data:/run/sockets
@@ -15,26 +11,18 @@ services:
       - ./persist/caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./ssl/out:/etc/caddy/certs
     restart: unless-stopped
-#    networks:
-#      - main
     network_mode: host
 
   homeassistant:
     container_name: homeassistant
     image: ghcr.io/home-assistant/home-assistant:2026.5
     privileged: true
-#    ports:
-#      - "8123:8123"
     env_file: globals.env
     volumes:
       - ./persist/homeassistant/config:/config
       - /run/dbus:/run/dbus:ro
-#    devices:
-#      - /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyUSB0
     restart: unless-stopped
     network_mode: host
-#    networks:
-#      - main
 
   mosquitto:
     container_name: mosquitto

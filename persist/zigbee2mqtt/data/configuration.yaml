@@ -12,26 +12,10 @@ homeassistant:
   enabled: true
 advanced:
   log_level: info
-  network_key:
-    - 114
-    - 139
-    - 239
-    - 95
-    - 183
-    - 226
-    - 40
-    - 253
-    - 175
-    - 237
-    - 191
-    - 17
-    - 84
-    - 235
-    - 180
-    - 7
+  network_key: '!secret.yaml network_key'
 version: 5
 devices:
   '0xa4c1389d2ff8a257':
-    friendly_name: '0xa4c1389d2ff8a257'
+    friendly_name: Termometr/Higtometr - Pokój
     homeassistant:
       name: Termometr/Higtometr - Pokój
