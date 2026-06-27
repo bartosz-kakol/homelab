@@ -1,0 +1,8 @@
+run_every: 60
+
+paths:
+  default:
+    on_error: terminate
+    sequence:
+      - script: /home/bartekk/auto-suspend/scripts/is_anyone_logged_in.py
+      - script: /home/bartekk/auto-suspend/scripts/is_vm_running.py
