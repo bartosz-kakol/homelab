@@ -1,0 +1,16 @@
+services:
+  copyparty:
+    container_name: copyparty
+    image: copyparty/iv:1.20.1
+    environment:
+      TZ: Europe/Warsaw
+      # Up to 3x performance boost, may double RAM usage
+      LD_PRELOAD: /usr/lib/libmimalloc-secure.so.2
+    stop_grace_period: 15s
+    volumes:
+      - ./copyparty/cfg:/cfg
+      - ./copyparty/internal:/mnt/Internal
+      # External storage
+      - /mnt/Magazyn:/mnt/Magazyn:rw,rslave
+    restart: unless-stopped
+    network_mode: host
