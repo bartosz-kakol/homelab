@@ -1,2 +1,2 @@
 alias sctl="sudo systemctl"
-alias slogs="sudo journalctl -euf"
+alias slogs="sudo journalctl -efu"

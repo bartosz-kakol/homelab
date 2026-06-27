@@ -1,0 +1,16 @@
+[Unit]
+Description=virsh API server
+After=network.target
+
+[Service]
+User=bartekk
+Group=libvirt
+Type=simple
+Restart=on-failure
+RestartSec=5
+
+Environment=LIBVIRT_DEFAULT_URI=qemu:///system
+ExecStart=/home/bartekk/virsh-server/virsh-server
+
+[Install]
+WantedBy=multi-user.target

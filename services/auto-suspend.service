@@ -1,0 +1,15 @@
+[Unit]
+Description=auto-suspend daemon
+After=network.target
+
+[Service]
+User=bartekk
+Group=bartekk
+Type=simple
+Restart=on-failure
+RestartSec=5
+
+ExecStart=/home/bartekk/auto-suspend/auto-suspend run --api --api-port 2345
+
+[Install]
+WantedBy=multi-user.target
