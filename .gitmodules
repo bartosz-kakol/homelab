@@ -1,0 +1,3 @@
+[submodule "crater"]
+	path = crater
+	url = git@github.com:bartosz-kakol/crater.git

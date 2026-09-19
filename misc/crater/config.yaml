@@ -1,0 +1,64 @@
+server:
+  bind_address: "123.123.1.1"
+  port: 9000
+  base_path: "/"
+  trust_proxy_headers: true
+  request_timeout_seconds: 60
+
+database:
+  path: null
+  busy_timeout_ms: 5000
+
+docker:
+  enabled: true
+  socket_path: "/var/run/docker.sock"   # rootless: /run/user/<uid>/docker.sock
+  compose_binary: "docker"              # invoked as: <binary> compose …
+  api_timeout_seconds: 60
+  build_timeout_seconds: 3600
+  compose_timeout_seconds: 1800
+  default_pull_policy: "missing"         # missing | always | never
+
+libvirt:
+  enabled: true
+  uri: "qemu:///system"            # or qemu:///session for a session daemon
+  default_pool: "default"          # pool used by disk-create dialogs
+  iso_pools: ["default"]           # pools scanned for attachable ISOs
+  default_network: "default"       # libvirt network preselected for new NICs
+  default_machine_type: "q35"
+  default_firmware: "uefi"         # uefi | bios
+  operation_timeout_seconds: 300
+
+systemd:
+  enabled: true
+  scope: "system"
+  unit_directory: "/etc/crater/units"
+  systemctl_binary: "systemctl"
+  systemd_analyze_binary: "systemd-analyze"
+  journalctl_binary: "journalctl"
+  verify_before_write: true
+  self_unit_name: "crater.service"
+
+logs:
+  retention_hours: 48              # 1-8760
+  max_total_mb: 256                # 8-65536; whichever limit hits first wins
+  live_tail_lines: 500             # initial backlog sent on WS connect
+  max_line_bytes: 16384            # longer lines are truncated with a marker
+  event_retention_hours: 48        # Crater's own structured event log
+  event_max_rows: 200000
+
+auth:
+  session_lifetime_days: 7
+  session_renew_threshold_days: 6
+  cookie_name: "crater_session"
+  cookie_secure: false
+  login_rate_limit: "10/minute"
+  max_sessions: 50
+
+ui:
+  default_theme: "system"
+  site_name: "Crater"
+  poll_interval_seconds: 2
+
+logging:
+  level: "debug"
+  format: "console"

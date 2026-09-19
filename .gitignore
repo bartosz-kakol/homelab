@@ -1,0 +1,5 @@
+.*
+!.gitignore
+!.bash_aliases
+!.env.dist
+snap/
