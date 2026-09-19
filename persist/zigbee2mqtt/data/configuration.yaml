@@ -16,6 +16,8 @@ advanced:
 version: 5
 devices:
   '0xa4c1389d2ff8a257':
-    friendly_name: Termometr/Higtometr - Pokój
+    friendly_name: Termometr/Higrometr
     homeassistant:
-      name: Termometr/Higtometr - Pokój
+      name: null
+  '0xa4c1384649b2ff70':
+    friendly_name: Hulajnoga - Gniazdo

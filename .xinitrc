@@ -18,5 +18,5 @@ exec chromium-browser \
   --disable-pinch \
   --overscroll-history-navigation=0 \
   --touch-events=enabled \
-  --force-device-scale-factor=1.25 \
+  --force-device-scale-factor=1.2 \
   "http://localhost:8123"

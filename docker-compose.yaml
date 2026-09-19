@@ -10,12 +10,29 @@ services:
       - /dev/shm:/run/host_shm:rw
       - ./persist/caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./ssl/out:/etc/caddy/certs
+      - ./persist/caddy/logs:/var/log/caddy
     restart: unless-stopped
     network_mode: host
 
+  auto_suspend:
+    container_name: auto_suspend
+    build:
+      context: auto-suspend
+      dockerfile: Dockerfile
+      args:
+        VERSION: "2.0"
+    env_file: globals.env
+    volumes:
+      - ./persist/auto-suspend/config.yaml:/app/config.yaml:ro
+      - ./persist/auto-suspend/scripts:/app/scripts:ro
+      - ./persist/caddy/logs:/var/log/caddy:ro
+    ports:
+      - "123.123.1.1:2345:8080"
+    restart: unless-stopped
+
   homeassistant:
     container_name: homeassistant
-    image: ghcr.io/home-assistant/home-assistant:2026.6
+    image: ghcr.io/home-assistant/home-assistant:2026.8
     privileged: true
     env_file: globals.env
     volumes:
@@ -33,7 +50,7 @@ services:
       - ./persist/mosquitto/data:/mosquitto/data
       - ./persist/mosquitto/log:/mosquitto/log
     ports:
-      - "1883:1883"
+      - "127.0.0.1:1883:1883"
 
   zigbee2mqtt:
     container_name: zigbee2mqtt
@@ -48,7 +65,149 @@ services:
     devices:
       - /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyUSB0
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+
+  invidious:
+    container_name: invidious
+    image: quay.io/invidious/invidious:latest
+    restart: unless-stopped
+    # Remove "127.0.0.1:" if used from an external IP
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: globals.env
+    environment:
+      # Please read the following file for a comprehensive list of all available
+      # configuration options and their associated syntax:
+      # https://github.com/iv-org/invidious/blob/master/config/config.example.yml
+      INVIDIOUS_CONFIG: |
+        db:
+          dbname: invidious
+          user: invid
+          password: ${INVIDIOUS_DB_PASSWORD}
+          host: invidious-db
+          port: 5432
+        check_tables: true
+        invidious_companion:
+          - private_url: "http://invidious-companion:8282/companion"
+            public_url: "https://invidious-companion.home.rmt/companion"
+        invidious_companion_key: "${INVIDIOUS_COMPANION_KEY}"
+        external_port: 443
+        domain: invidious.home.rmt
+        https_only: true
+        # statistics_enabled: false
+        hmac_key: "${INVIDIOUS_HMAC_KEY}"
+    healthcheck:
+      test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/stats || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 2
+    logging:
+      options:
+        max-size: "1G"
+        max-file: "4"
+    depends_on:
+      invidious-db:
+        condition: service_healthy
+
+  invidious-companion:
+    container_name: invidious-companion
+    image: quay.io/invidious/invidious-companion:latest
+    env_file: globals.env
+    environment:
+       SERVER_SECRET_KEY: "${INVIDIOUS_COMPANION_KEY}"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8282:8282"
+    logging:
+      options:
+        max-size: "1G"
+        max-file: "4"
+    cap_drop:
+      - ALL
+    read_only: true
+    volumes:
+      - ./persist/invidious/companion-cache/youtubei.js:/var/tmp/youtubei.js
+    security_opt:
+      - no-new-privileges:true
+
+  invidious-db:
+    container_name: invidious-db
+    image: docker.io/library/postgres:14
+    restart: unless-stopped
+    volumes:
+      - ./persist/invidious/postgres/data:/var/lib/postgresql/data
+      - ./vendor/invidious/config/sql:/config/sql:ro
+      - ./vendor/invidious/docker/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh:ro
+    environment:
+      POSTGRES_DB: invidious
+      POSTGRES_USER: invid
+      POSTGRES_PASSWORD: ${INVIDIOUS_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+  materialious:
+    container_name: materialious
+    image: wardpearce/materialious-full:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    env_file: globals.env
+    environment:
+      COOKIE_SECRET: "${MATERIALIOUS_COOKIE_SECRET}"
+      DATABASE_CONNECTION_URI: "sqlite:///materialious-data/materialious.db"
+      PUBLIC_PLAYER_ID: ""
+      PUBLIC_INTERNAL_AUTH: "true"
+      PUBLIC_REQUIRE_AUTH: "true"
+      PUBLIC_REGISTRATION_ALLOWED: "false"
+      PUBLIC_ADMIN_USERNAMES: "bartekk"
+      PUBLIC_CAPTCHA_DISABLED: "false"
+      PUBLIC_RATE_LIMIT_DISABLED: "false"
+      WHITELIST_BASE_DOMAIN: ""
+      PROXY_TRUST_CA: "/certs/ca.pem"
+      PUBLIC_DANGEROUS_ALLOW_ANY_PROXY: "false"
+      PUBLIC_DEFAULT_INVIDIOUS_INSTANCE: "https://invidious.home.rmt"
+      PUBLIC_DEFAULT_RETURNYTDISLIKES_INSTANCE: "https://returnyoutubedislikeapi.com"
+      PUBLIC_DEFAULT_SPONSERBLOCK_INSTANCE: "https://sponsor.ajay.app"
+      PUBLIC_DEFAULT_DEARROW_INSTANCE: "https://sponsor.ajay.app"
+      PUBLIC_DEFAULT_DEARROW_THUMBNAIL_INSTANCE: "https://dearrow-thumb.ajay.app"
+      PUBLIC_DEFAULT_SETTINGS: '{"themeColor": "#A9E3D2","region": "PL"}'
+    volumes:
+      - ./persist/invidious/materialious-data:/materialious-data
+      - ./ssl/out/server-bundle.pem:/certs/ca.pem:ro
+    extra_hosts:
+      - "invidious.home.rmt:host-gateway"
+      - "invidious-companion.home.rmt:host-gateway"
+    depends_on:
+      - invidious
+
+  vscode:
+    container_name: vscode
+    build:
+      context: vscode
+      dockerfile: Dockerfile
+    env_file: globals.env
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8989:8000"
+    volumes:
+      - ./persist/vscode/server-data:/home/coder/.vscode-server-data
+      - ./persist/vscode/projects:/home/coder/projects
+
+#  cobalt:
+#    container_name: cobalt
+#    image: ghcr.io/imputnet/cobalt:11
+#    init: true
+#    read_only: true
+#    restart: unless-stopped
+#    ports:
+#      - "127.0.0.1:9000:9000"
+#    environment:
+#      JWT_SECRET: ${COBALT_JWT_SECRET}
+#      CORS_WILDCARD: 0
+#      CORS_URL: "todo"
+#      API_URL: "https://cobalt.home.rmt"
+#    depends_on:
+#      - yt-session-generator
 
 #  djabbot:
 #    container_name: djabbot
@@ -59,18 +218,6 @@ services:
 #      TOKEN: ${DJAB_TOKEN}
 #      CLIENT_ID: ${DJAB_CLIENT_ID}
 #    restart: always
-
-#  factorio:
-#    image: factoriotools/factorio:2.0.76
-#    container_name: factorio
-#    restart: unless-stopped
-#    environment:
-#      DLC_SPACE_AGE: false
-#    ports:
-#      - "34197:34197/udp"
-#      - "27015:27015/tcp"
-#    volumes:
-#      - ./persist/factorio:/factorio
 
 volumes:
   socket-data:

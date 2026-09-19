@@ -1,0 +1,7 @@
+run_every: 600
+
+paths:
+  default:
+    on_error: terminate
+    sequence:
+      - script: /app/scripts/recent_relevant_request.py
