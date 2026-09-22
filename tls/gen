@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+#
+# Output goes to an "out" directory next to this script:
+#   server.crt, server.key  -> used by Caddy
+#   ca.crt                  -> import into the OS trust store of each client
+#   ca.key, ca.srl          -> CA private key and serial counter (keep safe)
+#   caddyfile.snippet       -> ready-to-paste Caddyfile site block
+#
+# Requires: bash, openssl (3.x).
+#
+set -euo pipefail
+umask 077
+
+# --- Settings ---------------------------------------------------------------
+DOMAINS=("home.lab" "d-home.lab")   # first entry becomes the certificate CN
+IPS=("123.123.1.1")
+CA_CN="Home Lab CA"
+CA_DAYS=3650        # CA lifetime
+LEAF_DAYS=397       # server certificate lifetime
+FORCE=0             # set to 1 to replace an existing server certificate/key
+
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+OUT_DIR="$SCRIPT_DIR/out"
+# ----------------------------------------------------------------------------
+
+die() { echo "error: $*" >&2; exit 1; }
+
+command -v openssl >/dev/null || die "openssl not found (apt install openssl)"
+
+# Subject Alternative Name list and the comma-separated site address list used in the Caddyfile snippet.
+san=""
+sites=""
+
+for d in "${DOMAINS[@]}"; do
+	san+="${san:+,}DNS:$d,DNS:*.$d";
+	sites+="${sites:+, }$d, *.$d";
+done
+
+for a in "${IPS[@]}"; do
+	san+="${san:+,}IP:$a";
+	sites+="${sites:+, }$a";
+done
+
+cn="${DOMAINS[0]}"
+
+mkdir -p "$OUT_DIR"
+cd "$OUT_DIR"
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+gen_key() { openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$1"; }
+
+# --- CA (reused if it already exists) ---------------------------------------
+if [[ -f ca.key && -f ca.crt ]]; then
+    echo "==> Reusing existing CA ($OUT_DIR/ca.crt)"
+else
+    echo "==> Creating CA"
+    gen_key ca.key
+    openssl req -new -key ca.key -subj "/CN=$CA_CN" -out "$tmp/ca.csr"
+    cat > "$tmp/ca.ext" <<EOF
+basicConstraints=critical,CA:TRUE,pathlen:0
+keyUsage=critical,keyCertSign,cRLSign
+subjectKeyIdentifier=hash
+EOF
+    openssl x509 -req -in "$tmp/ca.csr" -signkey ca.key -sha256 \
+        -days "$CA_DAYS" -extfile "$tmp/ca.ext" -out ca.crt 2>/dev/null
+fi
+
+# --- Server certificate -----------------------------------------------------
+if [[ -f server.crt && "$FORCE" != "1" ]]; then
+    die "server.crt already exists in $OUT_DIR (set FORCE=1 in this script to replace it)"
+fi
+
+echo "==> Creating server certificate for: $san"
+gen_key server.key
+openssl req -new -key server.key -subj "/CN=$cn" -out "$tmp/server.csr"
+cat > "$tmp/server.ext" <<EOF
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature
+extendedKeyUsage=serverAuth
+subjectAltName=$san
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid
+EOF
+openssl x509 -req -in "$tmp/server.csr" -CA ca.crt -CAkey ca.key -CAcreateserial \
+    -sha256 -days "$LEAF_DAYS" -extfile "$tmp/server.ext" -out server.crt 2>/dev/null
+
+# --- Caddyfile snippet ------------------------------------------------------
+cat > caddyfile.snippet <<EOF
+$sites {
+    tls $OUT_DIR/server.crt $OUT_DIR/server.key
+    respond "TLS works"
+}
+EOF
+
+# --- Permissions ------------------------------------------------------------
+chmod 600 ca.key server.key
+chmod 644 ca.crt server.crt caddyfile.snippet
+
+echo
+echo "Done. Files in $OUT_DIR:"
+ls -l "$OUT_DIR"
+echo
+echo "Next steps:"
+echo "  1. Merge caddyfile.snippet into /etc/caddy/Caddyfile, then: sudo systemctl reload caddy"
+echo "  2. Copy $OUT_DIR/ca.crt to each computer and import it into the OS trust store."
+echo "     (On Ubuntu/Debian: sudo cp ca.crt /usr/local/share/ca-certificates/home-lab-ca.crt && sudo update-ca-certificates)"
+echo "  3. Keep ca.key private; it can sign certificates that clients will trust."

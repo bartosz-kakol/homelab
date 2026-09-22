@@ -1,0 +1,11 @@
+MAIN STORAGE NAME:
+  path: CHANGE ME TO MAIN STORAGE PATH
+  watch: true
+  scan_on_startup: true
+  thumbnails: true
+
+MOVIES STORAGE NAME:
+  path: CHANGE ME TO MOVIES STORAGE PATH
+  watch: true
+  scan_on_startup: true
+  thumbnails: false

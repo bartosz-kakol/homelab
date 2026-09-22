@@ -1,0 +1,24 @@
+server:
+  listen: "0.0.0.0:8080"
+  session:
+    ttl: 30d
+    idle_timeout: 7d
+
+database:
+  dsn: "postgresql+asyncpg://silo:<CHANGE_ME_TO_SILO_DB_PASSWORD>@postgres:5432/silo"
+
+volumes: !include volumes.yaml
+
+access: !include access.yaml
+
+uploads:
+  chunk_size: 8MiB
+  max_parallel_chunks: 8
+  small_file_threshold: 4MiB
+
+trash:
+  retention: 30d
+
+logging:
+  level: info
+  format: console

@@ -1,5 +1,5 @@
 server:
-  bind_address: "123.123.1.1"
+  bind_address: "192.168.0.95"
   port: 9000
   base_path: "/"
   trust_proxy_headers: true

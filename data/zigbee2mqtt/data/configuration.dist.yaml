@@ -1,0 +1,19 @@
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto:1883
+  user: z2m
+  password: CHANGE_ME
+serial:
+  adapter: zstack
+  baudrate: 115200
+  port: /dev/ttyUSB0
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: true
+advanced:
+  log_level: info
+  network_key: GENERATE
+  pan_id: GENERATE
+  ext_pan_id: GENERATE

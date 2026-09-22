@@ -1,0 +1,125 @@
+services:
+  # -- Reverse proxy
+
+  caddy:
+    container_name: caddy
+    build: ./docker/caddy
+    restart: unless-stopped
+    env_file: global.env
+    volumes:
+      - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./tls/out/server.crt:/etc/caddy/certs/server.crt:ro
+      - ./tls/out/server.key:/etc/caddy/certs/server.key:ro
+      - ./data/caddy/logs:/var/log/caddy
+    network_mode: host
+
+
+  # -- DNS Server
+
+  dnsmasq:
+    container_name: dns
+    build: ./docker/dnsmasq
+    restart: on-failure
+    volumes:
+      - ./data/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf:ro
+    ports:
+      - "$TAILSCALE_IP:53:53/udp"
+      - "$TAILSCALE_IP:53:53/tcp"
+
+
+  # -- Fundimentals
+  
+  postgres:
+    container_name: postgres
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  db_provisioner:
+    container_name: db_provisioner
+    build: ./docker/provisioner
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: ./.env
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./databases.json:/config/databases.json:ro
+
+
+
+  # -- Services
+
+  silo:
+    container_name: silo
+    image: ghcr.io/bartosz-kakol/silo:0.1.0
+    restart: unless-stopped
+    user: ${SILO_UID}
+    group_add: ["${SILO_GID}"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    env_file: global.env
+    volumes:
+      - ./data/silo/config:/config:ro
+      - ${SILO_MAIN_STORAGE_PATH}:${SILO_MAIN_STORAGE_PATH}:rslave
+#      - ${SILO_MOVIES_STORAGE_PATH}:${SILO_MOVIES_STORAGE_PATH}:rslave
+    ports:
+      - "127.0.0.1:9001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db_provisioner:
+        condition: service_completed_successfully
+
+  home_assistant:
+    container_name: home_assistant
+    image: ghcr.io/home-assistant/home-assistant:2026.8
+    privileged: true
+    env_file: global.env
+    volumes:
+      - ./data/home_assistant/config:/config
+      - /run/dbus:/run/dbus:ro
+    restart: unless-stopped
+    network_mode: host
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./data/mosquitto/config:/mosquitto/config
+      - ./data/mosquitto/data:/mosquitto/data
+      - ./data/mosquitto/log:/mosquitto/log
+    ports:
+      - "127.0.0.1:9002:1883"
+
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt:latest
+    restart: unless-stopped
+    env_file: global.env
+    volumes:
+      - ./data/zigbee2mqtt/data:/app/data
+      - /run/udev:/run/udev:ro
+    devices:
+      - /dev/serial/by-id/${ZIGBEE2MQTT_USB_ADAPTER_ID}:/dev/ttyUSB0
+    ports:
+      - "127.0.0.1:9003:8080"
+    depends_on:
+      - mosquitto

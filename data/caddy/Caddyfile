@@ -1,0 +1,19 @@
+{
+	order wake_on_lan before respond
+}
+
+(homelab_tls) {
+	tls /etc/caddy/certs/server.crt /etc/caddy/certs/server.key
+}
+
+fs.home.lab fs.d-home.lab {
+	import homelab_tls
+
+	reverse_proxy http://127.0.0.1:9001
+}
+
+z2m.home.lab z2m.d-home.lab {
+	import homelab_tls
+
+	reverse_proxy http://127.0.0.1:9003
+}
