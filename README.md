@@ -1,10 +1,12 @@
-# Link map
+# Home Lab
+
+## Link map
 
 The following **hard links** are assumed:
 
 - `~/misc/crater/config.yaml` → `/etc/crater/config.yaml`
 
-# Setup
+## Setup
 
 1. Update the *Crater* submodule and [Install *Crater*](https://github.com/bartosz-kakol/crater#installation)
    ```bash
@@ -31,34 +33,34 @@ The following **hard links** are assumed:
    sudo systemctl enable --now bluetooth
    ```
 
-# Additional configuration
+## Additional configuration
 
-## Allow `crater` to access main home directory
+### Allow `crater` to access main home directory
 
 ```bash
 setfacl -m u:crater:x $HOME
 ```
 
-## Create a `storage` group (or any other group) and assign it
+### Create a `storage` group (or any other group) and assign it
 
 ```bash
 sudo groupadd storage
 sudo usermod -aG storage $USER
 ```
 
-## Allow `crater` to write to `docker-compose.yaml`
+### Allow `crater` to write to `docker-compose.yaml`
 
 ```bash
 setfacl -m u:crater:rw $HOME/docker-compose.yaml
 ```
 
-## Login to GitHub's Docker Image Registry
+### Login to GitHub's Docker Image Registry
 
 ```bash
 docker login ghcr.io -u <github username>
 ```
 
-## Create mount point
+### Create mount point
 
 ```bash
 sudo mkdir /mnt/<name>
@@ -72,7 +74,7 @@ UUID=ABCD-1234  /mnt/<name>  <filesystem>  uid=1000,gid=1001,fmask=017,dmask=007
 
 > Replace `gid` with the ID of the `storage` group.
 
-## Make a directory immutable (helpful for protecting mount points)
+### Make a directory immutable (helpful for protecting mount points)
 
 ```bash
 sudo chattr +i <path>
