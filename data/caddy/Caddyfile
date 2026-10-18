@@ -6,6 +6,12 @@
 	tls /etc/caddy/certs/server.crt /etc/caddy/certs/server.key
 }
 
+home.lab d-home.lab {
+	import homelab_tls
+
+	reverse_proxy http://127.0.0.1:9000
+}
+
 fs.home.lab fs.d-home.lab {
 	import homelab_tls
 

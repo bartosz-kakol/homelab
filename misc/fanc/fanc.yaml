@@ -1,0 +1,54 @@
+interval: 5s
+failsafe_temp: 85
+on_exit: restore
+
+sensors:
+  cpu:
+    chip: it8689_61030507
+    input: temp3
+    smoothing: 15s
+  hdd1:
+    chip: drivetemp
+    device: "ata2"
+    skip_if_standby: /dev/sdb
+    input: temp1
+    smoothing: 30s
+
+curves:
+  quiet:
+    points:
+      - { temp: 44, pwm: 40% }
+      - { temp: 45, pwm: 50% }
+      - { temp: 50, pwm: 60% }
+      - { temp: 70, pwm: 80% }
+      - { temp: 85, pwm: 100% }
+  drives:
+    hysteresis: 3
+    points:
+      - { temp: 39, pwm: 0% }
+      - { temp: 40, pwm: 50% }
+      - { temp: 50, pwm: 100% }
+
+fans:
+  cpu:
+    chip: it8689_61030507
+    pwm: pwm1
+    tach: fan1
+    pwm_mode: pwm
+    min_start: 10%
+    min_stop: 10%
+    kick: 0
+    max_step_down: 100%
+    controls:
+      - { sensor: cpu, curve: quiet }
+  drive_corridor:
+    chip: it8689_61030507
+    pwm: pwm2
+    tach: fan2
+    allow_stop: true
+    min_start: 40%
+    min_stop: 35%
+    kick: 0
+    max_step_down: 100%
+    controls:
+      - { sensor: hdd1, curve: drives }

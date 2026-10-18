@@ -1,0 +1,18 @@
+[Unit]
+Description=Fan controller
+After=local-fs.target
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/fanc --config /etc/fanc.yaml
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStopPost=/usr/local/bin/fanc --config /etc/fanc.yaml --full
+Restart=always
+RestartSec=3
+RestartPreventExitStatus=2
+StartLimitIntervalSec=0
+WatchdogSec=30
+NotifyAccess=main
+
+[Install]
+WantedBy=multi-user.target
